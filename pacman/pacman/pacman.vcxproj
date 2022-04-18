@@ -155,7 +155,6 @@
     <ClInclude Include="..\Framework\GameTime.h" />
     <ClInclude Include="..\Framework\Input.h" />
     <ClInclude Include="..\Framework\Renderer.h" />
-    <ClInclude Include="..\Game\Ending.h" />
     <ClInclude Include="..\Game\Game.h" />
     <ClInclude Include="..\Game\Loby.h" />
     <ClInclude Include="..\Game\Menu.h" />
