@@ -2,9 +2,10 @@
 #include "../stdafx.h"
 
 Stage::Stage(int sizeX, int sizeY, Input*& input, GameTime* &gametime)
-	:Game(sizeX, sizeY, input), cookieCount(0), gametime(gametime)
+	:Game(sizeX, sizeY, input), ghostCount(0), cookieCount(1), score(0), gametime(gametime)
 {
-	player = new Player(0, 1, 0.5f, PLAYER_D);
+	player = new Character(1, 0, 0.3f, PLAYER_D);
+	memset(ghostArr, NULL, sizeof(ghostArr));
 }
 
 void Stage::RewriteScreen(int i, int j, const char * sprite) {
@@ -17,9 +18,9 @@ bool Stage::LoadFile(char* filename)
 	std::ifstream ifs(filename);
 	if (false == ifs.is_open()) return false;
 
-	for (size_t i = 1; i < sizeY; ++i)
+	for (int i = 1; i < sizeY; ++i)
 	{
-		for (size_t j = 0; j < sizeX; j += 2) {
+		for (int j = 0; j < sizeX; j += 2) {
 
 			char ch1 = 0;
 			ifs.get(ch1);
@@ -40,48 +41,112 @@ bool Stage::LoadFile(char* filename)
 			}
 			else if (ch1 == '*' && ch2 == '*') {
 				RewriteScreen(i, j, COOKIE);
+				++cookieCount;
 			}
-			else if (ch1 == 'G' && ch2 == 'o') {
+			else if (ch1 == 'G' && ch2 == 'h') {
 				RewriteScreen(i, j, GHOST);
+				ghostArr[ghostCount] = new Character(j, i, 0, -1, 0.6f, GHOST);
+				++ghostCount;
 			}
 		}
 	}
+
+	//int mapValue[24][64] = { };
+
+	//for (int i = 0; i < 10; ++i)
+	//{
+	//	for (int j = 0; j < 10; ++j) {
+	//		mapValue[i][j] = 9;
+	//		//std::cout << mapValue[i][j] << " ";
+	//	}
+	//	//std::cout << std::endl;
+	//}
+
+	//mapValue[player->GetPosY()][player->GetPosX()] = 0;
+	//FindWay(mapValue, player->GetPosY(), player->GetPosX(), 1);
+
+	//for (int i = 1; i < 10; ++i)
+	//{
+	//	for (int j = 0; j < 10; ++j) {
+	//		std::cout << mapValue[i][j] << " ";
+	//	}
+	//	std::cout << std::endl;
+	//}
 }
 
-void Stage::UpdatePos(int x, int y, const char* playerSprite)
-{
+// 처음에 FindWay(mapValue, player->y, player->x, 1)
+bool Stage::FindWay(int mapValue[][64], int i, int j, int distance) {
 
-	if (nextPos == '#') {
-		return;
+	if (screen[i - 1][j] != WALL[0] && mapValue[i - 1][j] > distance) {
+		mapValue[i - 1][j] = distance;
+		return FindWay(mapValue, i - 1, j, ++distance);
 	}
 
-	screen[playerY][playerX] = ' ';
-	screen[playerY][playerX + 1] = ' ';
+	if (screen[i + 1][j] != WALL[0] && mapValue[i + 1][j] > distance) {
+		mapValue[i + 1][j] = distance;
+		return FindWay(mapValue, i + 1, j, ++distance);
+	}
 
-	playerX += 2 * x;
-	playerY += y;
+	if (screen[i][j - 2] != WALL[0] && mapValue[i][j - 2] > distance) {
+		mapValue[i][j - 2] = distance;
+		return FindWay(mapValue, i, j - 2, ++distance);
+	}
 
-	screen[playerY][playerX] = playerSprite[0];
-	screen[playerY][playerX + 1] = playerSprite[1];
+	if (screen[i][j + 2] != WALL[0] && mapValue[i][j + 2] > distance) {
+		mapValue[i][j + 2] = distance;
+		return FindWay(mapValue, i, j + 2, ++distance);
+	}
+
+	return true;
+}
+
+void Stage::GhostMove(int idx)
+{
+	char nextPos = screen[ghostArr[idx]->GetPosY() + ghostArr[idx]->GetYForce()][ghostArr[idx]->GetPosX() + ghostArr[idx]->GetXForce()];
+
+	if (nextPos == WALL[0]) {
+		for (int i = 0; i < 4; i++) {
+			ghostArr[idx]->Rotate90();
+			nextPos = screen[ghostArr[idx]->GetPosY() + ghostArr[idx]->GetYForce()][ghostArr[idx]->GetPosX() + ghostArr[idx]->GetXForce()];
+			if (nextPos != WALL[0]) break;
+		}
+	}
+
+	RewriteScreen(ghostArr[idx]->GetPosY(), ghostArr[idx]->GetPosX(), ghostArr[idx]->GetOnWhat());
+
+	ghostArr[idx]->UpdatePos();
+
+	if (nextPos == COOKIE[0]) ghostArr[idx]->SetOnWhat(COOKIE);
+	else if (nextPos == ' ') ghostArr[idx]->SetOnWhat("  ");
+
+	RewriteScreen(ghostArr[idx]->GetPosY(), ghostArr[idx]->GetPosX(), ghostArr[idx]->GetSprite());
 }
 
 bool Stage::Move() {
-	char nextPos = screen[player->GetNextY()][player->GetNextX()];
+	char nextPos = screen[player->GetPosY() + player->GetYForce()][player->GetPosX() + player->GetXForce()];
 
 	switch (nextPos) {
-	case '#' :
+	case WALL[0] :
 		return false;
 
 	case COOKIE[0] :
-		++cookieCount;
-		screen[0][0] = cookieCount / 100 + '0';
-		screen[0][1] = (cookieCount / 10) % 10 + '0';
-		screen[0][2] = cookieCount % 10 + '0';
-		return true;
+		--cookieCount;
+		score += 1;
+		screen[0][0] = score / 100 + '0';
+		screen[0][1] = (score / 10) % 10 + '0';
+		screen[0][2] = score % 10 + '0';
+		break;
 
 	case GHOST[0] :
-		isDead = true;
+		player->Dead();
+		break;
 	}
+
+	RewriteScreen(player->GetPosY(), player->GetPosX(), "  ");
+
+	player->UpdatePos();
+
+	RewriteScreen(player->GetPosY(), player->GetPosX(), player->GetSprite());
 
 	return true;
 }
@@ -92,41 +157,59 @@ bool Stage::Update()
 		return true;
 	}
 	else if (input->GetButtonDown(KeyCode::W)) {
-		player->SetForce(0, 1);
-		player->SetPlayerSprite(PLAYER_W);
+		player->SetForce(0, -1);
+		player->SetSprite(PLAYER_W);
 	}
 	else if (input->GetButtonDown(KeyCode::D)) {
 		player->SetForce(1, 0);
-		player->SetPlayerSprite(PLAYER_D);
+		player->SetSprite(PLAYER_D);
 	}
 	else if (input->GetButtonDown(KeyCode::S)) {
-		player->SetForce(0, -1);
-		player->SetPlayerSprite(PLAYER_S);
+		player->SetForce(0, 1);
+		player->SetSprite(PLAYER_S);
 	}
 	else if (input->GetButtonDown(KeyCode::A)) {
 		player->SetForce(-1, 0);
-		player->SetPlayerSprite(PLAYER_A);
+		player->SetSprite(PLAYER_A);
 	}
 
-	player->Update(gametime->GetDeltaTime());
+	player->AddTimeAfterMove(gametime->GetDeltaTime());
 
+	if (player->IsTimeToMove()) {
+		Move();
+	}
 
+	int mapValue[24][64] = { -1 };
 
+	for (int i = 0; i < ghostCount; i++) {
+		ghostArr[i]->AddTimeAfterMove(gametime->GetDeltaTime());
 
-	// 유령도?
-	// timeAfterMove 더해주기
-	// plyerSpeed보다 커지면 0으로 초기화하고 이동 함 시켜주기
+		if (ghostArr[i]->IsTimeToMove()) {
+			GhostMove(0);
+		}
+	}
 
 	// 바뀐 정보로 맵 수정하기
 
 	return false;
 }
-//
-//bool Stage::IsClear()
-//{
-//    return isDead;
-//}
+
+bool Stage::IsDead()
+{
+	return player->GetIsDead();
+}
+
+bool Stage::IsClear()
+{
+	return (cookieCount == 1);
+}
+
 
 Stage::~Stage()
 {
+	delete player;
+	
+	for (int i = 0; i < ghostCount; i++) {
+		delete ghostArr[i];
+	} 
 }

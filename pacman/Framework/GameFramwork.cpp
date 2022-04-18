@@ -3,8 +3,7 @@
 
 GameFramwork::GameFramwork()
 	:gameStatus(GameStatus::LOBY), level(StageLevel::STAGE_01), gameStageSizeX(64), gameStageSizeY(24),
-	renderer(nullptr), input(nullptr), gametime(nullptr),
-	loby(nullptr), menu(nullptr), stage(nullptr)
+	renderer(nullptr), input(nullptr), gametime(nullptr),loby(nullptr), menu(nullptr), stage(nullptr)
 {
 	renderer = new Renderer(gameStageSizeX, gameStageSizeY);
 	gametime = new GameTime();
@@ -15,16 +14,16 @@ GameFramwork::GameFramwork()
 	stage = new Stage(gameStageSizeX, gameStageSizeY, input, gametime);
 }
 
-// game 수정
-// 1.loby랑 엔딩 하는일이 똑같음
-// 2. 파일 이름을 ... game으로 로비 엔딩 퉁칠거면 그대로 아니면 안으로 넣어야 하는데
-// 둘다 게임으로 퉁치면 이름이 좀 애매한가...? 
-
 bool GameFramwork::Initialize()
 {
 	if (renderer->InitializeRenderer() == false) return false;
 	if (loby->LoadFile("../Game/textfile/Loby.txt") == false) return false;
 	if (menu->LoadFile("../Game/textfile/Menu.txt") == false) return false;
+
+	//char path[MAX_PATH] = { 0 };
+	//sprintf_s(path, sizeof(path), "../Stage/Stage%02d.txt", (int32_t)1);
+
+	//if (stage->LoadFile(path) == false) return false;
 
 	return true;
 }
@@ -42,7 +41,6 @@ void GameFramwork::update() {
 			char path[MAX_PATH] = { 0 };
 			sprintf_s(path, sizeof(path), "../Stage/Stage%02d.txt", (int32_t)level);
 
-			// 예외처리 고민해보기
 			if (stage->LoadFile(path) == false) return;
 
 			gameStatus = GameStatus::STAGE;
@@ -91,7 +89,8 @@ int32_t GameFramwork::Run()
 		update();
 		render();
 
-		//if (stage->IsClear()) break;
+		if (stage->IsClear()) break;
+		if (stage->IsDead()) break;
 		if (gameStatus == GameStatus::TERMINATE) break;
 	}
 
@@ -100,4 +99,11 @@ int32_t GameFramwork::Run()
 
 GameFramwork::~GameFramwork()
 {
+	delete renderer;
+	delete gametime;
+	delete input;
+
+	delete loby;
+	delete menu;
+	delete stage;
 }
