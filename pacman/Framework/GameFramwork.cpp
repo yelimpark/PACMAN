@@ -3,7 +3,7 @@
 
 GameFramwork::GameFramwork()
 	:gameStatus(GameStatus::LOBY), level(StageLevel::STAGE_01), gameStageSizeX(64), gameStageSizeY(24),
-	renderer(nullptr), input(nullptr), gametime(nullptr),loby(nullptr), menu(nullptr), stage(nullptr)
+	renderer(nullptr), input(nullptr), gametime(nullptr),loby(nullptr), menu(nullptr), stage(nullptr), ending(nullptr)
 {
 	renderer = new Renderer(gameStageSizeX, gameStageSizeY);
 	gametime = new GameTime();
@@ -12,6 +12,7 @@ GameFramwork::GameFramwork()
 	loby = new Loby(gameStageSizeX, gameStageSizeY, input);
 	menu = new Menu(gameStageSizeX, gameStageSizeY, input);
 	stage = new Stage(gameStageSizeX, gameStageSizeY, input, gametime);
+	ending = new Loby(gameStageSizeX, gameStageSizeY, input);
 }
 
 bool GameFramwork::Initialize()
@@ -19,6 +20,7 @@ bool GameFramwork::Initialize()
 	if (renderer->InitializeRenderer() == false) return false;
 	if (loby->LoadFile("../Game/textfile/Loby.txt") == false) return false;
 	if (menu->LoadFile("../Game/textfile/Menu.txt") == false) return false;
+	if (ending->LoadFile("../Game/textfile/Ending.txt") == false) return false;
 
 	//char path[MAX_PATH] = { 0 };
 	//sprintf_s(path, sizeof(path), "../Stage/Stage%02d.txt", (int32_t)1);
@@ -47,9 +49,15 @@ void GameFramwork::update() {
 		}
 		break;
 	case GameStatus::STAGE:
-		stage->Update();
+		if (stage->Update()) {
+			gameStatus = GameStatus::MENU;
+			delete stage;
+			stage = new Stage(gameStageSizeX, gameStageSizeY, input, gametime);
+		}
 		break;
 	case GameStatus::END:
+		if (ending->Update())
+			gameStatus = GameStatus::TERMINATE;
 		break;
 	default:
 		break;
@@ -72,7 +80,7 @@ void GameFramwork::render() {
 		break;
 
 	case GameStatus::END:
-		//RenderMap(GetMap());
+		renderer->Render(ending->GetScreen());
 		break;
 
 	default:
@@ -89,8 +97,13 @@ int32_t GameFramwork::Run()
 		update();
 		render();
 
-		if (stage->IsClear()) break;
-		if (stage->IsDead()) break;
+		if (stage->IsClear() || stage->IsDead()) {
+			//++level;
+
+			//if (level == StageLevel::STAGE_MAX) {
+				gameStatus = GameStatus::END;
+			//}
+		}
 		if (gameStatus == GameStatus::TERMINATE) break;
 	}
 

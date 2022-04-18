@@ -2,7 +2,7 @@
 #include "../stdafx.h"
 
 Stage::Stage(int sizeX, int sizeY, Input*& input, GameTime* &gametime)
-	:Game(sizeX, sizeY, input), ghostCount(0), cookieCount(1), score(0), gametime(gametime)
+	:Game(sizeX, sizeY, input), ghostCount(0), cookieCount(-1), score(0), gametime(gametime)
 {
 	player = new Character(1, 0, 0.3f, PLAYER_D);
 	memset(ghostArr, NULL, sizeof(ghostArr));
@@ -15,6 +15,7 @@ void Stage::RewriteScreen(int i, int j, const char * sprite) {
 
 bool Stage::LoadFile(char* filename)
 {
+	cookieCount == 0;
 	std::ifstream ifs(filename);
 	if (false == ifs.is_open()) return false;
 
@@ -131,10 +132,10 @@ bool Stage::Move() {
 
 	case COOKIE[0] :
 		--cookieCount;
-		score += 1;
-		screen[0][0] = score / 100 + '0';
-		screen[0][1] = (score / 10) % 10 + '0';
-		screen[0][2] = score % 10 + '0';
+		++score;
+		screen[0][0] = cookieCount / 100 + '0';
+		screen[0][1] = (cookieCount / 10) % 10 + '0';
+		screen[0][2] = cookieCount % 10 + '0';
 		break;
 
 	case GHOST[0] :
@@ -201,9 +202,8 @@ bool Stage::IsDead()
 
 bool Stage::IsClear()
 {
-	return (cookieCount == 1);
+	return (cookieCount == 0);
 }
-
 
 Stage::~Stage()
 {

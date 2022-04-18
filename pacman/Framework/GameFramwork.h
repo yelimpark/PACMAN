@@ -21,10 +21,6 @@ enum class GameStatus
 enum class StageLevel
 {
 	STAGE_01 = 1,
-	STAGE_02,
-	STAGE_03,
-	STAGE_04,
-	STAGE_05,
 	STAGE_MAX
 };
 
@@ -43,6 +39,7 @@ private:
 	Loby* loby;
 	Menu* menu;
 	Stage* stage;
+	Loby* ending;
 
 	void update();
 
