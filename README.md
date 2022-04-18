@@ -3,6 +3,15 @@
 <img src="img/loby.PNG">
 implement pacman to c++ console game
 
+## How to play?
+
+* Player : ▶
+* Wall : ▩
+* Ghost : ＆
+* Cookie : º
+
+Avoid 👻!! Eat 🍪!!
+
 ## In game play
 
 <center>
