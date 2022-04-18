@@ -12,7 +12,7 @@ public:
 
 	bool LoadFile(const char* filename);
 
-	bool HandleInput();
+	bool Update();
 
 	int GetStageNum() const;
 

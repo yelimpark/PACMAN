@@ -7,7 +7,7 @@ private:
 public:
 	Loby(int sizeX, int sizeY, Input*& input);
 
-	bool HandleInput();
+	bool Update();
 
 	virtual ~Loby();
 };

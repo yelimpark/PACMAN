@@ -7,7 +7,7 @@ Loby::Loby(int sizeX, int sizeY, Input*& input)
 
 }
 
-bool Loby::HandleInput()
+bool Loby::Update()
 {
 	return (input->GetButtonDown(KeyCode::SPACE) || input->GetButtonDown(KeyCode::ENTER));
 }

@@ -12,7 +12,7 @@ GameFramwork::GameFramwork()
 
 	loby = new Loby(gameStageSizeX, gameStageSizeY, input);
 	menu = new Menu(gameStageSizeX, gameStageSizeY, input);
-	stage = new Stage(gameStageSizeX, gameStageSizeY, input);
+	stage = new Stage(gameStageSizeX, gameStageSizeY, input, gametime);
 }
 
 // game ¼öÁ¤
@@ -33,11 +33,11 @@ void GameFramwork::update() {
 	switch (gameStatus)
 	{
 	case GameStatus::LOBY:
-		if (loby->HandleInput())
+		if (loby->Update())
 			gameStatus = GameStatus::MENU;
 		break;
 	case GameStatus::MENU:
-		if (menu->HandleInput()) {
+		if (menu->Update()) {
 			level = (StageLevel)menu->GetStageNum();
 			char path[MAX_PATH] = { 0 };
 			sprintf_s(path, sizeof(path), "../Stage/Stage%02d.txt", (int32_t)level);
@@ -49,7 +49,7 @@ void GameFramwork::update() {
 		}
 		break;
 	case GameStatus::STAGE:
-		stage->HandleInput();
+		stage->Update();
 		break;
 	case GameStatus::END:
 		break;
@@ -91,7 +91,7 @@ int32_t GameFramwork::Run()
 		update();
 		render();
 
-		if (stage->IsClear()) break;
+		//if (stage->IsClear()) break;
 		if (gameStatus == GameStatus::TERMINATE) break;
 	}
 

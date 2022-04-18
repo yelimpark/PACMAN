@@ -1,35 +1,32 @@
 #pragma once
 #include "Game.h"
+#include "Player.h"
+#include "../Framework/GameTime.h"
 
+#define WALL "¢Ì"
 #define COOKIE "¨¬"
 #define GHOST "£¦"
-#define PLAYER_W "¡ã"
-#define PLAYER_A "¢¸"
-#define PLAYER_S "¡å"
-#define PLAYER_D "¢º"
-#define WALL '#';
 
 class Stage : public Game {
 private:
-	int playerX;
-	int playerY;
+	Player * player;
+
+	GameTime* gametime;
+
 	int cookieCount;
-	bool isDead;
 	
-	void UpdatePos(int x, int y, const char* playerSprite);
+	void RewriteScreen(int i, int j, const char* sprite);
 
-	void RewriteScreen();
-
-	bool Move(int x, int y, const char* playerSprite);
+	bool Move();
 
 public:
-	Stage(int sizeX, int sizeY, Input*& input);
+	Stage(int sizeX, int sizeY, Input*& input, GameTime*& gametime);
 
 	bool LoadFile(char* filename);
 
-	bool HandleInput();
+	bool Update();
 
-	bool IsClear();
+	//bool IsClear();
 
 	virtual ~Stage();
 };

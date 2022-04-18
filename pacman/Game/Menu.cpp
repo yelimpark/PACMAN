@@ -38,7 +38,7 @@ bool Menu::LoadFile(const char* filename)
 	}
 }
 
-bool Menu::HandleInput()
+bool Menu::Update()
 {
 	if (input->GetButtonDown(KeyCode::W)) {
 		MoveCursor(0, -1);

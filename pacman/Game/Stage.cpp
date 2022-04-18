@@ -1,30 +1,15 @@
 #include "Stage.h"
 #include "../stdafx.h"
 
-Stage::Stage(int sizeX, int sizeY, Input*& input)
-    :Game(sizeX, sizeY, input), playerX(1), playerY(1),
-	cookieCount(0), isDead(false)
+Stage::Stage(int sizeX, int sizeY, Input*& input, GameTime* &gametime)
+	:Game(sizeX, sizeY, input), cookieCount(0), gametime(gametime)
 {
+	player = new Player(0, 1, 0.5f, PLAYER_D);
 }
 
-void Stage::RewriteScreen()
-{
-	screen[playerY][playerX] = PLAYER_D[0];
-	screen[playerY][playerX + 1] = PLAYER_D[1];
-
-	for (int i = 0; i < sizeY; ++i)
-	{
-		for (int j = 0; j < sizeX; ++j) {
-			if (screen[i][j] == '*' && screen[i][j + 1] == '*') {
-				screen[i][j] = COOKIE[0];
-				screen[i][j + 1] = COOKIE[1];
-			}
-			else if (screen[i][j] == 'G' && screen[i][j + 1] == 'o') {
-				screen[i][j] = GHOST[0];
-				screen[i][j + 1] = GHOST[1];
-			}
-		}
-	}
+void Stage::RewriteScreen(int i, int j, const char * sprite) {
+	screen[i][j] = sprite[0];
+	screen[i][j + 1] = sprite[1];
 }
 
 bool Stage::LoadFile(char* filename)
@@ -32,25 +17,39 @@ bool Stage::LoadFile(char* filename)
 	std::ifstream ifs(filename);
 	if (false == ifs.is_open()) return false;
 
-	for (size_t i = 0; i < sizeY; ++i)
+	for (size_t i = 1; i < sizeY; ++i)
 	{
-		for (size_t j = 0; j < sizeX; ++j) {
-			char ch;
-			ifs.get(ch);
+		for (size_t j = 0; j < sizeX; j += 2) {
 
-			if (ch == '\n') break;
+			char ch1 = 0;
+			ifs.get(ch1);
+			if (ch1 == '\n') break;
+			if (ifs.eof()) break;
+			
+			char ch2 = 0;
+			ifs.get(ch2);
+			if (ch2 == '\n') break;
 			if (ifs.eof()) break;
 
-			screen[i][j] = ch;
+			if (ch1 == '#' && ch2 == '#') {
+				RewriteScreen(i, j, WALL);
+			}
+			else if (ch1 == 'P' && ch2 == 'l') {
+				RewriteScreen(i, j, PLAYER_D);
+				player->SetPos(j, i);
+			}
+			else if (ch1 == '*' && ch2 == '*') {
+				RewriteScreen(i, j, COOKIE);
+			}
+			else if (ch1 == 'G' && ch2 == 'o') {
+				RewriteScreen(i, j, GHOST);
+			}
 		}
 	}
-
-	RewriteScreen();
 }
 
 void Stage::UpdatePos(int x, int y, const char* playerSprite)
 {
-	char nextPos = screen[playerY + y][playerX + x * 2];
 
 	if (nextPos == '#') {
 		return;
@@ -66,11 +65,8 @@ void Stage::UpdatePos(int x, int y, const char* playerSprite)
 	screen[playerY][playerX + 1] = playerSprite[1];
 }
 
-bool Stage::Move(int x, int y, const char* playerSprite) {
-
-	UpdatePos(x, y, playerSprite);
-
-	char nextPos = screen[playerY + y][playerX + x*2];
+bool Stage::Move() {
+	char nextPos = screen[player->GetNextY()][player->GetNextX()];
 
 	switch (nextPos) {
 	case '#' :
@@ -78,6 +74,9 @@ bool Stage::Move(int x, int y, const char* playerSprite) {
 
 	case COOKIE[0] :
 		++cookieCount;
+		screen[0][0] = cookieCount / 100 + '0';
+		screen[0][1] = (cookieCount / 10) % 10 + '0';
+		screen[0][2] = cookieCount % 10 + '0';
 		return true;
 
 	case GHOST[0] :
@@ -87,30 +86,46 @@ bool Stage::Move(int x, int y, const char* playerSprite) {
 	return true;
 }
 
-bool Stage::HandleInput()
+bool Stage::Update()
 {
-	if (input->GetButtonDown(KeyCode::W)) {
-		Move(0, -1, PLAYER_W);
-	}
-	else if (input->GetButtonDown(KeyCode::D)) {
-		Move(1, 0, PLAYER_D);
-	}
-	else if (input->GetButtonDown(KeyCode::S)) {
-		Move(0, 1, PLAYER_S);
-	}
-	else if (input->GetButtonDown(KeyCode::A)) {
-		Move(-1, 0, PLAYER_A);
-	}
-	else if (input->GetButtonDown(KeyCode::ESC)) {
+	if (input->GetButtonDown(KeyCode::ESC)) {
 		return true;
 	}
+	else if (input->GetButtonDown(KeyCode::W)) {
+		player->SetForce(0, 1);
+		player->SetPlayerSprite(PLAYER_W);
+	}
+	else if (input->GetButtonDown(KeyCode::D)) {
+		player->SetForce(1, 0);
+		player->SetPlayerSprite(PLAYER_D);
+	}
+	else if (input->GetButtonDown(KeyCode::S)) {
+		player->SetForce(0, -1);
+		player->SetPlayerSprite(PLAYER_S);
+	}
+	else if (input->GetButtonDown(KeyCode::A)) {
+		player->SetForce(-1, 0);
+		player->SetPlayerSprite(PLAYER_A);
+	}
+
+	player->Update(gametime->GetDeltaTime());
+
+
+
+
+	// 유령도?
+	// timeAfterMove 더해주기
+	// plyerSpeed보다 커지면 0으로 초기화하고 이동 함 시켜주기
+
+	// 바뀐 정보로 맵 수정하기
+
 	return false;
 }
-
-bool Stage::IsClear()
-{
-    return isDead;
-}
+//
+//bool Stage::IsClear()
+//{
+//    return isDead;
+//}
 
 Stage::~Stage()
 {

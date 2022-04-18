@@ -16,7 +16,7 @@ public:
 
 	char** GetScreen() const;
 
-	virtual bool HandleInput() = 0;
+	virtual bool Update() = 0;
 
 	virtual ~Game();
 };
